@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>SuppressPackagingPclFacades</id>
+    <version>1.0.0</version>
+    <authors>Andrew Arnott</authors>
+    <owners>Andrew Arnott</owners>
+    <projectUrl>http://github.com/aarnott/SuppressPackagingPclFacades</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Adds a build step to automatically suppress packaging of PCL reference assemblies when platform assemblies are available.
+    This fixes runtime errors you may see in your mobile or store apps that indicate the reference assembly was packaged instead of the platform assembly.
+    </description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright 2014</copyright>
+    <tags>PCL XAP</tags>
+  </metadata>
+</package>

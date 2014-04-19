@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <UsingTask
+      TaskName="SuppressPackagingPclFacades"
+      TaskFactory="CodeTaskFactory"
+      AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v12.0.dll" >
+    <ParameterGroup>
+      <XapFilesInputCollection ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <ReducedXapFilesInputCollection ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.Collections.Generic" />
+      <Using Namespace="System.Text" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+        var modifiedInputs = new List<ITaskItem>(XapFilesInputCollection);
+
+        var redundantPathSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        {
+          var targetPathSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+          foreach (var inputFile in XapFilesInputCollection)
+          {
+            if (!targetPathSet.Add(inputFile.GetMetadata("TargetPath")))
+            {
+              redundantPathSet.Add(inputFile.GetMetadata("TargetPath"));
+            }
+          }
+        }
+        
+        foreach (string redundantFile in redundantPathSet)
+        {
+          var sources = new HashSet<ITaskItem>();
+          foreach (var inputFile in XapFilesInputCollection)
+          {
+            if (string.Equals(redundantFile, inputFile.GetMetadata("TargetPath"), StringComparison.OrdinalIgnoreCase))
+            {
+              sources.Add(inputFile);
+            }
+          }
+          
+          Func<ITaskItem, bool> isPortableAssembly = s => s.ItemSpec.IndexOf("portable-", StringComparison.OrdinalIgnoreCase) >= 0;
+          
+          if (sources.Where(s => !isPortableAssembly(s)).Count() == 1)
+          {
+            // We found a case where there is a platform assembly (amidst PCLs), so drop all but the platform one.
+            foreach (ITaskItem pclSource in sources.Where(isPortableAssembly))
+            {
+              this.Log.LogMessage(MessageImportance.Normal, "Suppressing inclusion of PCL facade file from XAP: " + pclSource.ItemSpec);
+              modifiedInputs.Remove(pclSource);
+            }
+          }
+        }
+        
+        ReducedXapFilesInputCollection = modifiedInputs.ToArray();
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <PropertyGroup>
+    <XapPackagerDependsOn>$(XapPackagerDependsOn);SuppressPackagingPclFacades</XapPackagerDependsOn>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFilePath)</MSBuildAllProjects>
+  </PropertyGroup>
+  <Target Name="SuppressPackagingPclFacades">
+    <SuppressPackagingPclFacades
+      XapFilesInputCollection="@(XapFilesInputCollection)">
+      <Output TaskParameter="ReducedXapFilesInputCollection" ItemName="ReducedXapFilesInputCollection" />
+    </SuppressPackagingPclFacades>
+
+    <ItemGroup>
+      <XapFilesInputCollection Remove="@(XapFilesInputCollection)" />
+      <XapFilesInputCollection Include="@(ReducedXapFilesInputCollection)" />
+    </ItemGroup>
+
+    <!--<Message Importance="high" Text="XapFilesInputCollection: %(XapFilesInputCollection.Identity) %(XapFilesInputCollection.TargetPath)" />
+    <Message Importance="high" Text="ReducedXapFilesInputCollection: %(ReducedXapFilesInputCollection.Identity) %(ReducedXapFilesInputCollection.TargetPath)" />-->
+  </Target>
+</Project>
