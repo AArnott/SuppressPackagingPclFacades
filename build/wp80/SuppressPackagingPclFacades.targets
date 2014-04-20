@@ -41,8 +41,8 @@
       <Output TaskParameter="ReducedXapFilesInputCollection" ItemName="ReducedXapFilesInputCollection" />
     </SuppressPackagingPclFacades>
 
-    <Message Importance="high" Text="XapFilesInputCollection: %(XapFilesInputCollection.Identity) %(XapFilesInputCollection.TargetPath)" />
-    <Message Importance="high" Text="ReducedXapFilesInputCollection: %(ReducedXapFilesInputCollection.Identity) %(ReducedXapFilesInputCollection.TargetPath)" />
+    <!--<Message Importance="high" Text="XapFilesInputCollection: %(XapFilesInputCollection.Identity) %(XapFilesInputCollection.TargetPath)" />
+    <Message Importance="high" Text="ReducedXapFilesInputCollection: %(ReducedXapFilesInputCollection.Identity) %(ReducedXapFilesInputCollection.TargetPath)" />-->
 
     <ItemGroup>
       <XapFilesInputCollection Remove="@(XapFilesInputCollection)" />

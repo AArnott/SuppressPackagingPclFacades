@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>SuppressPackagingPclFacades</id>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <authors>Andrew Arnott</authors>
     <owners>Andrew Arnott</owners>
     <projectUrl>http://github.com/aarnott/SuppressPackagingPclFacades</projectUrl>
