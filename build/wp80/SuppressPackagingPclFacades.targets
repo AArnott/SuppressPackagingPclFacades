@@ -13,41 +13,15 @@
       <Using Namespace="System.Text" />
       <Code Type="Fragment" Language="cs">
         <![CDATA[
-        var modifiedInputs = new List<ITaskItem>(XapFilesInputCollection);
+        var modifiedInputs = new List<ITaskItem>();
 
-        var redundantPathSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Our algorithm is to just pick the first of any redundant files.
+        var targetPathSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var inputFile in XapFilesInputCollection)
         {
-          var targetPathSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-          foreach (var inputFile in XapFilesInputCollection)
+          if (string.IsNullOrEmpty(inputFile.GetMetadata("TargetPath")) || targetPathSet.Add(inputFile.GetMetadata("TargetPath")))
           {
-            if (!targetPathSet.Add(inputFile.GetMetadata("TargetPath")))
-            {
-              redundantPathSet.Add(inputFile.GetMetadata("TargetPath"));
-            }
-          }
-        }
-        
-        foreach (string redundantFile in redundantPathSet)
-        {
-          var sources = new HashSet<ITaskItem>();
-          foreach (var inputFile in XapFilesInputCollection)
-          {
-            if (string.Equals(redundantFile, inputFile.GetMetadata("TargetPath"), StringComparison.OrdinalIgnoreCase))
-            {
-              sources.Add(inputFile);
-            }
-          }
-          
-          Func<ITaskItem, bool> isPortableAssembly = s => s.ItemSpec.IndexOf("portable-", StringComparison.OrdinalIgnoreCase) >= 0;
-          
-          if (sources.Where(s => !isPortableAssembly(s)).Count() == 1)
-          {
-            // We found a case where there is a platform assembly (amidst PCLs), so drop all but the platform one.
-            foreach (ITaskItem pclSource in sources.Where(isPortableAssembly))
-            {
-              this.Log.LogMessage(MessageImportance.Normal, "Suppressing inclusion of PCL facade file from XAP: " + pclSource.ItemSpec);
-              modifiedInputs.Remove(pclSource);
-            }
+            modifiedInputs.Add(inputFile);
           }
         }
         
@@ -67,12 +41,12 @@
       <Output TaskParameter="ReducedXapFilesInputCollection" ItemName="ReducedXapFilesInputCollection" />
     </SuppressPackagingPclFacades>
 
+    <Message Importance="high" Text="XapFilesInputCollection: %(XapFilesInputCollection.Identity) %(XapFilesInputCollection.TargetPath)" />
+    <Message Importance="high" Text="ReducedXapFilesInputCollection: %(ReducedXapFilesInputCollection.Identity) %(ReducedXapFilesInputCollection.TargetPath)" />
+
     <ItemGroup>
       <XapFilesInputCollection Remove="@(XapFilesInputCollection)" />
       <XapFilesInputCollection Include="@(ReducedXapFilesInputCollection)" />
     </ItemGroup>
-
-    <!--<Message Importance="high" Text="XapFilesInputCollection: %(XapFilesInputCollection.Identity) %(XapFilesInputCollection.TargetPath)" />
-    <Message Importance="high" Text="ReducedXapFilesInputCollection: %(ReducedXapFilesInputCollection.Identity) %(ReducedXapFilesInputCollection.TargetPath)" />-->
   </Target>
 </Project>
